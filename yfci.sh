@@ -20,86 +20,178 @@ clear
 SETUP_DIR="/home/setups"
 
 # YF WorkSpace Directory
-YF_HOME_DIR="/home/ci/java"
-YF_LIB_DIR="$YF_HOME_DIR/lib"
-YF_TARGET_DIR="$YF_HOME_DIR/target"
+YF_HOME_DIR="/home/yf"
 YF_LOG_DIR="$YF_HOME_DIR/log"
-YF_CONF_FILE="$YF_HOME_DIR/ci.conf"
+YF_CONF_FILE="$YF_HOME_DIR/yf.conf"
+
 
 # About Nodejs
 
-NODE_VERSION=""
-NODE_DOWNLOAD_URI=""
-NODE_DIR=""
+NODE_DIR="$YF_HOME_DIR/nodejs"
+NODE_LIB_DIR="$NODE_DIR/lib"
+NODE_VERSION_CODE="v4.5.0"
+NODE_VERSION="node-$NODE_VERSION_CODE-linux-x64"
+NODE_TAR="$NODE_VERSION.tar"
+NODE_XZ="$NODE_TAR.xz"
+NODE_DOWNLOAD_URI="https://nodejs.org/dist/$NODE_VERSION_CODE/$NODE_XZ"
+NODE_HOME_DIR="$NODE_LIB_DIR/$NODE_VERSION"
 
+# About Mongodb
+
+MONGO_DIR="$YF_HOME_DIR/mongodb"
+MONGO_DATA_DIR="$MONGO_DIR/data"
+MONGO_LOG_DIR="$MONGO_DIR/log"
+MONGO_LIB_DIR="$MONGO_DIR/lib"
+MONGO_VERSION_CODE="v3.0"
+MONGO_TAR="mongodb-linux-x86_64-v3.0-latest.tgz"
+MONGO_DOWNLOAD_URI="http://downloads.mongodb.org/linux/$MONGO_TAR"
+MONGO_HOME_DIR="$MONGO_LIB_DIR/$MONGO_VERSION_CODE"
+
+# About Redis3.0
+
+REDIS_DIR="$YF_HOME_DIR/redis"
+REDIS_LIB_DIR="$REDIS_DIR/lib"
+REDIS_VERSION_CODE="redis-3.0.7"
+REDIS_TAR="$REDIS_VERSION_CODE.tar.gz"
+REDIS_DOWNLOAD_URI="http://download.redis.io/releases/${REDIS_TAR}"
+REDIS_HOME_DIR="$REDIS_LIB_DIR/$REDIS_VERSION_CODE"
 
 # About Java
+
+JAVA_DIR="$YF_HOME_DIR/java"
+JAVA_LIB_DIR="$JAVA_DIR/lib"
+JAVA_TARGET_DIR="$JAVA_DIR/target"
 
 # JDK 1.8
 JAVA_VERSION="jdk1.8.0_102"
 JAVA_TAR="jdk-8u102-linux-x64.tar.gz"
 JAVA_DOWNLOAD_URI="http://download.oracle.com/otn-pub/java/jdk/8u102-b14/jdk-8u102-linux-x64.tar.gz"
-JAVA_HOME_DIR="$CI_LIB_DIR/$JAVA_VERSION"
+JAVA_HOME_DIR="$JAVA_LIB_DIR/$JAVA_VERSION"
 
 # Maven 3.3.9
 MAVEN_VERSION="apache-maven-3.3.9"
 MAVEN_TAR="$MAVEN_VERSION-bin.tar.gz"
 MAVEN_DOWNLOAD_URI="http://mirrors.cnnic.cn/apache/maven/maven-3/3.3.9/binaries/$MAVEN_TAR"
-MAVEN_DIR="$CI_LIB_DIR/$MAVEN_VERSION"
+MAVEN_DIR="$JAVA_LIB_DIR/$MAVEN_VERSION"
 
-# Tomcat 8.5.4
-TOMCAT_VERSION="apache-tomcat-8.5.4"
+# Tomcat 8.5.5
+TOMCAT_VERSION="apache-tomcat-8.5.5"
 TOMCAT_TAR="$TOMCAT_VERSION.tar.gz"
-TOMCAT_DOWNLOAD_URI="http://mirrors.cnnic.cn/apache/tomcat/tomcat-8/v8.5.4/bin/$TOMCAT_TAR"
-TOMCAT_HOME_DIR="$CI_LIB_DIR/$TOMCAT_VERSION"
+TOMCAT_DOWNLOAD_URI="http://apache.fayea.com/tomcat/tomcat-8/v8.5.5/bin/$TOMCAT_TAR"
+TOMCAT_HOME_DIR="$JAVA_LIB_DIR/$TOMCAT_VERSION"
 TOMCAT_DEPLOY_DIR="$TOMCAT_HOME_DIR/webapps"
 
 TOMCAT_PORT="8080"
 
 
 # 需要读取相关的配置文件
-if [ -f $CI_CONF_FILE ]; then
-  TOMCAT_HOME_DIR=`grep 'TOMCAT_HOME=' $CI_CONF_FILE`
+if [ -f $YF_CONF_FILE ]; then
+  TOMCAT_HOME_DIR=`grep 'TOMCAT_HOME=' $YF_CONF_FILE`
   TOMCAT_HOME_DIR=${TOMCAT_HOME_DIR#*=}
-  TOMCAT_PORT=`grep 'TOMCAT_PORT=' $CI_CONF_FILE`
+  TOMCAT_PORT=`grep 'TOMCAT_PORT=' $YF_CONF_FILE`
   TOMCAT_PORT=${TOMCAT_PORT#*=}
   TOMCAT_DEPLOY_DIR="$TOMCAT_HOME_DIR/webapps"
 fi
 
-# 项目的变量定义
-PROJECT_GIT="https://git.oschina.net/yfdever/BizApi.git"
-PROJECT_DIR="$CI_HOME_DIR/BizApi"
-PROJECT_SOURCE_DIR="$PROJECT_DIR/api"
-PROJECT_TARGET_DIR="$PROJECT_SOURCE_DIR/target"
-PROJECT_TARGET_VERSION_CODE=`date '+%m%d%H%M'`
 
+# Functions
+# Return Code 0 : ok , others : error
 
-# 定义相关的函数
-# 返回 0 表示操作成功，小于 0 的所有返回值，均为执行错误
+# Install
+function yfInstall {
 
-# 安装操作
-function ciInstall {
-  ### 创建CI工作区
-  echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Create CI Dir    >> >>>>>>>>>>>>>>>>${RES}"
-  #放心执行，因为已经存在的忽略掉的
+  if [ ! -d $SETUP_DIR ]; then
+    mkdir -p $SETUP_DIR
+  fi
+
+  NOW_TIME=`date '+%m%d%H%M'`
+
+  ### Create Directory
+  echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Create YF Dir    <<<<<<<<<<<<<<<<${RES}"
   mkdir -p $YF_HOME_DIR
-  mkdir -p $CI_LIB_DIR
-  mkdir -p $CI_TARGET_DIR
-  mkdir -p $CI_LOG_DIR
+  mkdir -p $YF_LOG_DIR
 
-  ### 安装 jdk 1.8
-  #判断是否安装过 jdk
+  ### Install nodejs
+  if [ ! -d $NODE_HOME_DIR ]; then
+    mkdir -p $NODE_LIB_DIR
+
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Nodejs    <<<<<<<<<<<<<<<<${RES}"
+    cd $NODE_LIB_DIR
+    if [ -f $SETUP_DIR/$NODE_XZ ]; then
+      cp $SETUP_DIR/$NODE_XZ $NODE_LIB_DIR/$NODE_XZ
+    else
+      wget $NODE_DOWNLOAD_URI
+      cp $NODE_XZ $SETUP_DIR/$NODE_XZ
+    fi
+    xz -d $NODE_XZ
+    tar -xvf $NODE_TAR > $YF_LOG_DIR/$NOW_TIME.nodejs.install.log
+
+    echo "NODE_HOME=$NODE_HOME_DIR" >> /etc/profile
+    echo 'PATH=$NODE_HOME/bin:$PATH' >> /etc/profile
+    echo 'NODE_PATH=$NODE_HOME/lib/node_modules' >> /etc/profile
+    echo "export NODE_HOME PATH NODE_PATH" >> /etc/profile
+    source /etc/profile
+    node -v
+    npm install -g pm2
+  else
+    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Nodejs Installed   <<<<<<<<<<<<<<<<${RES}"
+  fi
+
+
+  ### Install Mongodb
+  if [ ! -d $MONGO_DIR ]; then
+    mkdir -p $MONGO_DATA_DIR
+    mkdir -p $MONGO_LOG_DIR
+    mkdir -p $MONGO_LIB_DIR
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Mongodb    <<<<<<<<<<<<<<<<${RES}"
+    cd $MONGO_LIB_DIR
+    if [ -f $SETUP_DIR/$MONGO_TAR ]; then
+      cp $SETUP_DIR/$MONGO_TAR $MONGO_LIB_DIR/$MONGO_TAR
+    else
+      wget $MONGO_DOWNLOAD_URI
+      cp $MONGO_TAR $SETUP_DIR/$MONGO_TAR
+    fi
+    tar -zxvf $MONGO_TAR > $YF_LOG_DIR/$NOW_TIME.mongodb.install.log
+    rm -rf $MONGO_TAR
+    mv mongodb* $MONGO_HOME_DIR
+  else
+    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Mongodb Installed   <<<<<<<<<<<<<<<<${RES}"
+  fi
+
+  ### Install Redis
+  if [ ! -d $REDIS_DIR ]; then
+    mkdir -p $REDIS_LIB_DIR
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Redis    <<<<<<<<<<<<<<<<${RES}"
+    cd $REDIS_LIB_DIR
+    if [ -f $SETUP_DIR/$REDIS_TAR ]; then
+      cp $SETUP_DIR/$REDIS_TAR $REDIS_LIB_DIR/$REDIS_TAR
+    else
+      wget $REDIS_DOWNLOAD_URI
+      cp $REDIS_TAR $SETUP_DIR/$REDIS_TAR
+    fi
+    tar -zxvf $REDIS_TAR > $YF_LOG_DIR/$NOW_TIME.redis.install.log
+    cd $REDIS_HOME_DIR
+    make
+  else
+    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Redis Installed   <<<<<<<<<<<<<<<<${RES}"
+  fi
+
+  ### Install JDK
   if [ ! -d $JAVA_HOME_DIR ]; then
-    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install JDK    >> >>>>>>>>>>>>>>>>${RES}"
-    cd $CI_LIB_DIR
+    mkdir -p $JAVA_DIR
+    mkdir -p $JAVA_LIB_DIR
+    mkdir -p $JAVA_TARGET_DIR
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install JDK    <<<<<<<<<<<<<<<<${RES}"
+    cd $JAVA_LIB_DIR
     if [ -f $SETUP_DIR/$JAVA_TAR ]; then
-      cp $SETUP_DIR/$JAVA_TAR $CI_LIB_DIR/$JAVA_TAR
+      cp $SETUP_DIR/$JAVA_TAR $JAVA_LIB_DIR/$JAVA_TAR
     else
       wget --no-check-certificate -c --header "Cookie: oraclelicense=accept-securebackup-cookie" -O $JAVA_TAR $JAVA_DOWNLOAD_URI
+      cp $JAVA_TAR $SETUP_DIR/$JAVA_TAR
     fi
 
-    tar -zxvf $JAVA_TAR
-    # TODO:修改环境变量
+    tar -zxvf $JAVA_TAR > $YF_LOG_DIR/$NOW_TIME.jdk.install.log
+
     echo "JAVA_HOME=$JAVA_HOME_DIR" >> /etc/profile
     echo 'PATH=$JAVA_HOME/bin:$PATH' >> /etc/profile
     echo 'CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar' >> /etc/profile
@@ -107,63 +199,52 @@ function ciInstall {
     source /etc/profile
     java -version
   else
-    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       JDK Installed   >> >>>>>>>>>>>>>>>>${RES}"
+    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       JDK Installed   <<<<<<<<<<<<<<<<${RES}"
   fi
 
-  ### 安装 tomcat
-  #判断是否安装过 tomcat
+  ### Install Tomcat
   if [ ! -d $TOMCAT_HOME_DIR ]; then
-    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Tomcat    >> >>>>>>>>>>>>>>>>${RES}"
-    cd $CI_LIB_DIR
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Tomcat    <<<<<<<<<<<<<<<<${RES}"
+    cd $JAVA_LIB_DIR
     if [ -f $SETUP_DIR/$TOMCAT_TAR ]; then
-      cp $SETUP_DIR/$TOMCAT_TAR $CI_LIB_DIR/$TOMCAT_TAR
+      cp $SETUP_DIR/$TOMCAT_TAR $JAVA_LIB_DIR/$TOMCAT_TAR
     else
       wget $TOMCAT_DOWNLOAD_URI
+      cp $TOMCAT_TAR $SETUP_DIR/$TOMCAT_TAR
     fi
 
-    tar -zxvf $TOMCAT_TAR
+    tar -zxvf $TOMCAT_TAR > $YF_LOG_DIR/$NOW_TIME.tomcat.install.log
   else
-    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Tomcat Installed   >> >>>>>>>>>>>>>>>>${RES}"
+    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Tomcat Installed   <<<<<<<<<<<<<<<<${RES}"
   fi
 
 
-  ### 安装 maven
-  #判断是否安装过maven
+  ### Install Maven
   if [ ! -d $MAVEN_DIR ]; then
-    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Maven    >> >>>>>>>>>>>>>>>>${RES}"
-    cd $CI_LIB_DIR
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Maven    >> <<<<<<<<<<<<<<<<${RES}"
+    cd $JAVA_LIB_DIR
     if [ -f $SETUP_DIR/$MAVEN_TAR ]; then
-      cp $SETUP_DIR/$MAVEN_TAR $CI_LIB_DIR/$MAVEN_TAR
+      cp $SETUP_DIR/$MAVEN_TAR $JAVA_LIB_DIR/$MAVEN_TAR
     else
       wget $MAVEN_DOWNLOAD_URI
+      cp $MAVEN_TAR $SETUP_DIR/$MAVEN_TAR
     fi
-    tar -zxvf $MAVEN_TAR
+    tar -zxvf $MAVEN_TAR > $YF_LOG_DIR/$NOW_TIME.maven.install.log
   else
-    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Maven Installed   >> >>>>>>>>>>>>>>>>${RES}"
+    echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Maven Installed   <<<<<<<<<<<<<<<<${RES}"
   fi
 
-  ### 安装 git & lsof
-  echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Git & LSOF    >> >>>>>>>>>>>>>>>>${RES}"
+  ###  Install Git & lsof
+  echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Git & LSOF    <<<<<<<<<<<<<<<<${RES}"
   yum install git
   yum install lsof
-  echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Git & LSOF Installed   >> >>>>>>>>>>>>>>>>${RES}"
-
-  ### 下载代码
-  #if [ ! -d $PROJECT_DIR ]; then
-  #  echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Download Code From Git : >$PROJECT_GIT< ${RES}"
-  #  cd $CI_HOME_DIR
-  #  git clone $PROJECT_GIT
-  #fi
-  #echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Code Downloaded ${RES}"
-
-  echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>     Install Down ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>     New You Can Build The Project ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>     $ ci build ${RES}"
+  echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Git & LSOF Installed   <<<<<<<<<<<<<<<<${RES}"
+  echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>     Install Done ${RES}"
   return 0
 }
 
 # 配置设置
-function ciConfig {
+function yfConfig {
   echo -e "${PINK}请输入tomcat的所在目录(默认:$TOMCAT_HOME_DIR)? ${RES}"
   read -p ":" _tomcatHome
   if [ -z $_tomcatHome ]; then
@@ -193,23 +274,24 @@ function ciConfig {
     TOMCAT_PORT=$_tomcatPort
   fi
   # 写入文件
-  rm -f $CI_CONF_FILE
-  echo "TOMCAT_HOME=$TOMCAT_HOME_DIR" > $CI_CONF_FILE
-  echo "TOMCAT_PORT=$TOMCAT_PORT" >> $CI_CONF_FILE
+  rm -f $YF_CONF_FILE
+  echo "TOMCAT_HOME=$TOMCAT_HOME_DIR" > $YF_CONF_FILE
+  echo "TOMCAT_PORT=$TOMCAT_PORT" >> $YF_CONF_FILE
   return 0
 }
 
-# 清空ci工作区的所有文件，慎用
-function ciClean {
-  if [ ! -d $CI_HOME_DIR ]; then
+# Clean The WorkSpace
+function yfClean {
+  if [ ! -d $YF_HOME_DIR ]; then
     #该目录已经不存在
-    echo -e "${PINK}目录 : $CI_HOME_DIR 已不存在,无需删除~ ${RES}"
+    echo -e "${PINK}目录 : $YF_HOME_DIR 已不存在,无需删除~ ${RES}"
     return 22
   fi
-  echo -e "${PINK}确认要清除CI目录[$CI_HOME_DIR]么?${RES}"
+  echo -e "${PINK}确认要清除CI目录[$YF_HOME_DIR]么?${RES}"
   read -p "[y/n]:" isYN
   if [ $isYN = "y" ]; then
-    rm -rf $CI_HOME_DIR
+    rm -rf $YF_HOME_DIR
+    echo -e "${PINK}环境变量的配置文件中的内容需要手动去除,$ vi /etc/profile ${RES}"
   else
     echo "Bye"
     return 21
@@ -217,132 +299,24 @@ function ciClean {
   return 0
 }
 
-# 清楚ci工作区的 target & log目录
-function ciClear {
-  echo -e "${PINK}确认要清除CI目录的日志和目标文件么?${RES}"
-  read -p "[y/n]:" isYN
-  if [ $isYN = "y" ]; then
-    rm -rf $CI_HOME_DIR/log/*
-    rm -rf $CI_HOME_DIR/target/*
-  else
-    echo "Bye"
-    return 31
-  fi
-  return 0
-}
 
-# 构建项目
-function ciBuild {
-  echo -e "${BLUE_COLOR}[GO]>>>>>>      CLEAN${RES}"
-  # 清空target目录下的文件
-  rm -rf $PROJECT_TARGET_DIR/*
-  if [ -f $CI_TARGET_DIR/api_deploy.war ]; then
-    rm -f $CI_TARGET_DIR/api_deploy.war
-  fi
-  echo -e "${GREEN_COLOR}[OK]>>>>>>     CLEAN DONE${RES}"
-  #下拉代码
-  cd $PROJECT_DIR
-  echo -e "${BLUE_COLOR}[GO]>>>>>>      PULL THE MASTER BRANCH CODE      ${RES}"
-  git pull origin master
-  echo -e "${GREEN_COLOR}[OK]>>>>>>     PULL DONE     ${RES}"
-
-  echo -e "${BLUE_COLOR}[GO]>>>>>>      BUILD THE SOURCE      ${RES}"
-  #编译代码
-  cd $PROJECT_SOURCE_DIR
-  $MAVEN_DIR/bin/mvn package > $CI_LOG_DIR/MAVEN_PACKAGE_$PROJECT_TARGET_VERSION_CODE.log
-  echo -e "${GREEN_COLOR}[OK]>>>>>> BUILD DONE           ${RES}"
-  #ls -l $API_TARGET_DIR
-  echo -e "${BLUE_COLOR}[GO]>>>>>> Copy to target dir     ${RES}"
-  # 这里需要替换成相应的tomcat的目录
-  cp $PROJECT_TARGET_DIR/api.war $CI_TARGET_DIR/api_$PROJECT_TARGET_VERSION_CODE.war
-  cp $PROJECT_TARGET_DIR/api.war $CI_TARGET_DIR/api_deploy.war
-  echo -e "${GREEN_COLOR}[OK]>>>>>> Target Version : $PROJECT_TARGET_VERSION_CODE"
-  echo -e "${GREEN_COLOR}[OK]>>>>>> You Need TO Deploy       ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>> Like: $ ./ci.sh deploy       ${RES}"
-
-  return 0
-}
-
-# 复制工程并重启tomcat
-function ciRestart {
-  if [ -z $1 ]; then
-    target_war="$CI_TARGET_DIR/api_deploy.war"
-  fi
-  echo "target_war  $target_war"
-  if [ ! -f $target_war ]; then
-    echo -e "${PINK}[ERROR]>>>>>> Cant Find The TargetWar File~ You Need Run The Next Command:        ${RES}"
-    echo -e "${GREEN_COLOR}[OK]>>>>>> $ ./ci.sh build       ${RES}"
-    return 52
-  fi
-
-  echo -e "${BLUE_COLOR}[GO]>>>>>> SHUTDOWN TOMCAT          ${RES}"
-  $TOMCAT_HOME_DIR/bin/shutdown.sh
-  # 有时候会关闭掉，导致重启不了
-  # 使用lsof强制进行关闭
-  kill -9 `lsof -t -i:$TOMCAT_PORT`
-  echo -e "${GREEN_COLOR}[OK]>>>>>>  Shutdown ok          ${RES}"
-
-  cp $target_war $TOMCAT_DEPLOY_DIR/api.war
-
-  $TOMCAT_HOME_DIR/bin/startup.sh
-
-  if [ ! -f $TOMCAT_DEPLOY_DIR/api.war ]; then
-    echo -e "${PINK}[ERROR]>>>>>> API  deploy failed~ plz run again        ${RES}"
-    return 51
-  else
-    echo -e "${GREEN_COLOR}[OK]>>>>>> Success~ Deploy Finished~          ${RES}"
-  fi
-  return 0
-}
-
-# 手动部署项目
-function ciDeploy {
-  target_war="$CI_TARGET_DIR/api_deploy.war"
-  if [ ! -z $1 ]; then
-    echo $1
-    target_war="$CI_TARGET_DIR/api_$1.war"
-  fi
-  echo $target_war
-  echo -e "${GREEN_COLOR}[GO]>>>>>> Deploy          ${RES}"
-  echo -e "${GREEN_COLOR}[GO]>>>>>>  The Tomcat Var Is:          ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>>  TOMCAT_HOME_DIR At $TOMCAT_HOME_DIR ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>>  TOMCAT_PORT     At $TOMCAT_PORT ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>>  TOMCAT_DEPLOY_DIR     At $TOMCAT_DEPLOY_DIR ${RES}"
-  echo -e "${GREEN_COLOR}[OK]>>>>>>  是否使用当前环境变量进行发布?${RES}"
-  read -p "[y/n]:" isYN
-  if [ ! $isYN = "y" ]; then
-    echo -e "${GREEN_COLOR}[OK]>>>>>>  请输入 $ ci.sh conf 重新配置tomcat的目录${RES}"
-    return 41
-  fi
-
-  ciRestart $target_war
-
-  return $?
-}
-
-# 自动部署项目
-function ciPublish {
-  ciRestart
-  return $?
-}
-
-function ciRequireCommand {
+function yfRequireCommand {
   echo -e "${GREEN_COLOR}[GO]>>>>>>  您输入的参数错误，可选的参数如下：         ${RES}"
-  echo -e "${GREEN_COLOR}[GO]>>>>>>  ci install  : 安装ci目录，maven，下载git代码          ${RES}"
-  echo -e "${GREEN_COLOR}[GO]>>>>>>  ci build  ：编译git仓库中最新的代码 ${RES}"
-  echo -e "${GREEN_COLOR}[GO]>>>>>>  ci deploy ：将代码发布到servlet容器中并重启该容器 ${RES}"
-  echo -e "${GREEN_COLOR}[GO]>>>>>>  ci conf ：设置servlet容器的目录和端口 ${RES}"
+  echo -e "${GREEN_COLOR}[GO]>>>>>>  yfci install  : 安装ci目录，maven，下载git代码          ${RES}"
+  echo -e "${GREEN_COLOR}[GO]>>>>>>  yfci build  ：编译git仓库中最新的代码 ${RES}"
+  echo -e "${GREEN_COLOR}[GO]>>>>>>  yfci deploy ：将代码发布到servlet容器中并重启该容器 ${RES}"
+  echo -e "${GREEN_COLOR}[GO]>>>>>>  yfci conf ：设置servlet容器的目录和端口 ${RES}"
 }
 echo -e "${BLUE_COLOR}[GO]>>>>>>>>>>>> Command:[$1]>>>>>>>>>>>>>>${RES}"
 
 #没有值
 if [ -z $1 ]; then
-  ciRequireCommand
+  yfRequireCommand
   exit
 ## 安装流程
 elif [ $1 = "install" ]; then
 
-  ciInstall
+  yfInstall
 
 elif [ $1 = "conf" ]; then
 
@@ -352,22 +326,7 @@ elif [ $1 = "conf" ]; then
   fi
 
 elif [ $1 = "clean" ]; then
-  ciClean
-  if [ $? > 0 ]; then
-    exit
-  fi
-
-elif [ $1 = "clear" ]; then
-  ciClear
-  if [ $? > 0 ]; then
-    exit
-  fi
-elif [ $1 = "build" ]; then
-  ciBuild
-elif [ $1 = "deploy" ]; then
-  ciDeploy $2
-elif [ $1 = "publish" ]; then
-  ciPublish
+  yfClean
   if [ $? > 0 ]; then
     exit
   fi
