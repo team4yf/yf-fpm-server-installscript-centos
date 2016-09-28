@@ -42,3 +42,9 @@ $ yfci install
 $ cd /home/yf
 `
 可以查看相应的程序已经安装完毕了
+
+###### 6.启动mongodb和redis服务
+`
+$ yfci startup
+`
+通过数据可以查看到2个数据库已经正常启动了

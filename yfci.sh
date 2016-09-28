@@ -47,6 +47,8 @@ MONGO_TAR="mongodb-linux-x86_64-v3.0-latest.tgz"
 MONGO_DOWNLOAD_URI="http://downloads.mongodb.org/linux/$MONGO_TAR"
 MONGO_HOME_DIR="$MONGO_LIB_DIR/$MONGO_VERSION_CODE"
 
+MONGO_STARTUP="$MONGO_HOME_DIR/bin/mongod --dbpath=$MONGO_DATA_DIR/ --logpath=$MONGO_LOG_DIR/log.log --fork"
+
 # About Redis3.0
 
 REDIS_DIR="$YF_HOME_DIR/redis"
@@ -55,6 +57,16 @@ REDIS_VERSION_CODE="redis-3.0.7"
 REDIS_TAR="$REDIS_VERSION_CODE.tar.gz"
 REDIS_DOWNLOAD_URI="http://download.redis.io/releases/${REDIS_TAR}"
 REDIS_HOME_DIR="$REDIS_LIB_DIR/$REDIS_VERSION_CODE"
+
+REDIS_STARTUP="$REDIS_HOME_DIR/src/redis-server"
+
+# About Tcl
+TCL_DIR="$REDIS_LIB_DIR/tcl"
+TCL_VERSION_CODE="tcl8.6.1"
+TCL_TAR="tcl8.6.1-src.tar.gz"
+TCL_DOWNLOAD_URI="http://nchc.dl.sourceforge.net/project/tcl/Tcl/8.6.1/$TCL_TAR"
+TCL_HOME_DIR="$TCL_DIR/$TCL_VERSION_CODE"
+
 
 # About Java
 
@@ -161,6 +173,21 @@ function yfInstall {
   ### Install Redis
   if [ ! -d $REDIS_DIR ]; then
     mkdir -p $REDIS_LIB_DIR
+    echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Tcl    <<<<<<<<<<<<<<<<${RES}"
+    mkdir -p $TCL_DIR
+    cd $TCL_DIR
+    if [ -f $SETUP_DIR/$TCL_TAR ]; then
+      cp $SETUP_DIR/$TCL_TAR $TCL_DIR/$TCL_TAR
+    else
+      wget $TCL_DOWNLOAD_URI
+      cp $TCL_TAR $SETUP_DIR/$TCL_TAR
+    fi
+    tar -zxvf $TCL_TAR > $YF_LOG_DIR/$NOW_TIME.tcl.install.log
+    cd $TCL_HOME_DIR/unix
+    ./configure
+    make
+    make install
+
     echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Redis    <<<<<<<<<<<<<<<<${RES}"
     cd $REDIS_LIB_DIR
     if [ -f $SETUP_DIR/$REDIS_TAR ]; then
@@ -172,6 +199,7 @@ function yfInstall {
     tar -zxvf $REDIS_TAR > $YF_LOG_DIR/$NOW_TIME.redis.install.log
     cd $REDIS_HOME_DIR
     make
+    make install
   else
     echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Redis Installed   <<<<<<<<<<<<<<<<${RES}"
   fi
@@ -241,6 +269,16 @@ function yfInstall {
   echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Git & LSOF Installed   <<<<<<<<<<<<<<<<${RES}"
   echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>     Install Done ${RES}"
   return 0
+}
+
+function yfStartup {
+  echo -e "${PINK}启动mongodb${RES}"
+  $MONGO_STARTUP
+  echo -e "${PINK}指令：$MONGO_STARTUP ${RES}"
+
+  echo -e "${PINK}启动redis${RES}"
+  nohup $REDIS_STARTUP &
+  echo -e "${PINK}指令：$REDIS_STARTUP ${RES}"
 }
 
 # 配置设置
@@ -317,6 +355,11 @@ if [ -z $1 ]; then
 elif [ $1 = "install" ]; then
 
   yfInstall
+
+## 安装流程
+elif [ $1 = "startup" ]; then
+
+  yfStartup
 
 elif [ $1 = "conf" ]; then
 
