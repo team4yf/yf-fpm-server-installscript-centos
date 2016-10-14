@@ -2,7 +2,7 @@
 
 # Author: yfsoft
 # Version: 1.0.0
-# Date: 2016-09-14
+# Date: 2016-10-14
 # Desc: for install,build,run nodejs & java code tools ,ex:jdk,maven,tomcat,node,npm,git ...
 
 # Console Color Defined
@@ -84,14 +84,14 @@ JAVA_HOME_DIR="$JAVA_LIB_DIR/$JAVA_VERSION"
 MAVEN_VERSION="apache-maven-3.3.9"
 MAVEN_TAR="$MAVEN_VERSION-bin.tar.gz"
 # Need US Mirror
-MAVEN_DOWNLOAD_URI="http://mirrors.cnnic.cn/apache/maven/maven-3/3.3.9/binaries/$MAVEN_TAR"
+MAVEN_DOWNLOAD_URI="http://www-us.apache.org/dist/maven/maven-3/3.3.9/binaries/$MAVEN_TAR"
 MAVEN_DIR="$JAVA_LIB_DIR/$MAVEN_VERSION"
 
 # Tomcat 8.5.5
 TOMCAT_VERSION="apache-tomcat-8.5.5"
 TOMCAT_TAR="$TOMCAT_VERSION.tar.gz"
 # Need US Mirror
-TOMCAT_DOWNLOAD_URI="http://apache.fayea.com/tomcat/tomcat-8/v8.5.5/bin/$TOMCAT_TAR"
+TOMCAT_DOWNLOAD_URI="http://www-us.apache.org/dist/tomcat/tomcat-8/v8.5.5/bin/$TOMCAT_TAR"
 TOMCAT_HOME_DIR="$JAVA_LIB_DIR/$TOMCAT_VERSION"
 TOMCAT_DEPLOY_DIR="$TOMCAT_HOME_DIR/webapps"
 
