@@ -7,5 +7,3 @@ yum install pcre
 yum install nginx
 
 service nginx start
-cd /etc/nginx/conf.d/default/conf
-pwd
