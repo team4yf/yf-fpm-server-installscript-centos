@@ -53,5 +53,23 @@ $ yfci startup
 
 ###### 7. Run Ftp
 ```
-docker run -d -v /home/vsftpd:/home/vsftpd -p 20:20 -p 21:21 -p 21100-21110:21100-21110 -e FTP_USER=test -e FTP_PASS=test --name vsftpd fauria/vsftpd
+docker run -d \
+--name ftpd_server \
+-p 21:21 -p 30000-31009:30000-31009 \
+-e "PUBLICHOST=47.92.217.52" \
+-e "FTP_MAX_CONNECTIONS=50" \
+-e "FTP_MAX_CLIENTS=50" \
+-v /home/ftpusers/admin:/home/ftpusers/admin --restart=always stilliard/pure-ftpd:hardened
+
+
+# make user the dir root
+chmod 777 -R /home/ftpusers/
+
+# enter the container
+docker exec -it ftpd_server /bin/bash
+# run the scripts
+pure-pw useradd admin -u ftpuser -d /home/ftpusers/admin
+chown ftpuser:ftpgroup /home/ftpusers/admin
+pure-pw mkdb
+
 ```
