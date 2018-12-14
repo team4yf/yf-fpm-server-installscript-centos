@@ -1,9 +1,5 @@
 #! /bin/sh
 
-yum install openssl
-yum install zlib
-yum install pcre
-
-yum install nginx
+yum install -y openssl zlib pcre nginx
 
 service nginx start
