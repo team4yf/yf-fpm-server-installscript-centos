@@ -42,7 +42,7 @@ NODE_HOME_DIR="$NODE_LIB_DIR/$NODE_VERSION"
 # Install
 function yfInstall {
   # Install gcc
-  yum install gcc
+  yum install -y gcc
 
   if [ ! -d $SETUP_DIR ]; then
     mkdir -p $SETUP_DIR
@@ -84,8 +84,7 @@ function yfInstall {
 
   ###  Install Git & lsof
   echo -e "${BLUE_COLOR}[PO]>>>>>>>>>>>>>>>>>      Install Git & LSOF    <<<<<<<<<<<<<<<<${RES}"
-  yum install git
-  yum install lsof
+  yum install -y git lsof
   echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>       Git & LSOF Installed   <<<<<<<<<<<<<<<<${RES}"
   echo -e "${GREEN_COLOR}[OK]>>>>>>>>>>>>>>>>>     Install Done ${RES}"
   return 0
